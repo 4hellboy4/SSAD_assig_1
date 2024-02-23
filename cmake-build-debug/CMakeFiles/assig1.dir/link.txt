@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/assig1.dir/main.cpp.o -o assig1 
