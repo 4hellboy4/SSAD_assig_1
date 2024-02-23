@@ -1,96 +1,141 @@
 #include <stdio.h>
 #include <iostream>
-#include <iomanip>
 #include <vector>
-#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
-class Complex {
-private:
-    float real;
-    float imaginary;
+class DataStructure {
 public:
-    Complex() : real(0.0), imaginary(0.0) {}
-
-    Complex(float a, float b) : real(a), imaginary(b) {}
-
-    Complex operator+(Complex& other) {
-        return {this->getReal() + other.getReal(), this->getImaginary() + other.getImaginary()};
-    }
-
-    Complex operator-(Complex& other) {
-        return {this->getReal() - other.getReal(), this->getImaginary() - other.getImaginary()};
-    }
-
-    Complex operator*(Complex& other) {
-        return {this->getReal() * other.getReal() + this->getImaginary()*other.getImaginary()*(-1), this->getImaginary()*other.getReal() + this->getReal()*other.getImaginary()};
-    }
-
-    Complex operator/(Complex& other) {
-        float divider = other.getReal()*other.getReal() + other.getImaginary()*other.getImaginary();
-        return {this->getReal() / divider, this->getImaginary() / divider};
-    }
-
-    bool operator==(Complex& other) {
-        return (this->getReal() == other.getReal() && this->getImaginary() == other.getImaginary());
-    }
-
-    float getReal() {
-        return real;
-    }
-
-    float getImaginary() {
-        return imaginary;
-    }
-
-
+    virtual void insert(int x) = 0;
+    virtual void remove() = 0;
+    virtual bool search(int x) = 0;
 };
 
-string getResult(Complex result) {
-    ostringstream stream;
-    if (result.getImaginary() < 0.0) {
-        stream << fixed << setprecision(2) <<result.getReal() << "" << result.getImaginary() << "i";
-    } else {
-        stream << fixed << setprecision(2) <<result.getReal() << "+" << result.getImaginary() << "i";
+class SequentialDataStructure : public DataStructure {
+public:
+    virtual void pushBack(int x) = 0;
+    virtual void pushFront(int x) = 0;
+    virtual void popBack() = 0;
+    virtual void popFront() = 0;
+};
+
+class DynamicDataStructure : public DataStructure {
+public:
+    virtual void resize(int new_size) = 0;
+    virtual void clear() = 0;
+};
+
+class List : public SequentialDataStructure, public DynamicDataStructure {
+private:
+    vector<int> array;
+    int size;
+    int index;
+public:
+
+    List() {
+        vector<int> temp(50);
+        array = temp;
+        index = -1;
+        this->size = 50;
     }
-    return stream.str();
-}
+
+    List(int capacity) : size(capacity) {
+        vector<int> temp(capacity);
+        array = temp;
+    }
+
+    void insert(int x) override {
+        if (index + 1 >= size) {
+            this->resize((size)*2);
+        }
+        this->index++;
+        this->array.insert(this->array.begin()+index, x);
+    }
+
+    void remove() override {
+        if (this->index > 0) {
+            this->array.pop_back();
+            this->index--;
+        }
+    }
+
+    bool search(int x) override {
+//        any_of(this->array.begin(), this->array.end(), );
+        for (int i = 0; i < index + 1; i++) {
+            if (this->array.at(i) == x)
+                return true;
+        }
+        return false;
+    }
+
+    void pushFront(int x) override {
+        if (index + 1 >= size) {
+            this->resize(size*2);
+        }
+        this->index++;
+        this->array.insert(this->array.begin(), x);
+    }
+
+    void pushBack(int x) override {
+        if (index + 1 >= size) {
+            this->resize(size*2);
+        }
+        this->index++;
+        this->array.insert(this->array.begin()+index, x);
+    }
+
+    void popBack() override {
+        this->array.pop_back();
+        this->index--;
+    }
+
+    void popFront() override {
+        if (!this->array.empty()) {
+            this->array.erase(this->array.begin());
+            this->index--;
+        }
+    }
+
+    void resize(int new_size) override {
+        this->size = new_size;
+        vector<int> new_vector(size);
+        for (int element : this->array) {
+            new_vector.emplace_back(element);
+        }
+        this->array = new_vector;
+    }
+
+    void clear() override {
+        this->array.clear();
+    }
+
+    void printNumbers() {
+        for (int i = 0; i < this->index; ++i) {
+            cout << this->array.at(i) << " ";
+        }
+    }
+};
+
 
 int main() {
     int n;
-
     cin >> n;
 
-    vector<string> answer;
+    List list = List();
 
     for (int i = 0; i < n; ++i) {
         string op;
-        float a, b, c, d;
-        cin >> op >> a >> b >> c >> d;
-        Complex num1 = Complex(a,b);
-        Complex num2 = Complex(c,d);
-        Complex result;
-        if (op == "+") {
-            result = num1 + num2;
-        } else if (op == "-") {
-            result = num1 - num2;
-        } else if (op == "*") {
-            result = num1 * num2;
-        } else if (op == "/") {
-             Complex t = Complex(c, -d);
-             result = num1*t;
-             result = result / num2;
+        int num;
+        cin >> op >> num;
+        if (op == "insert") {
+            list.insert(num);
+        } else if (op == "remove") {
+            list.remove();
         } else {
-            answer.emplace_back(num1 == num2 ? "true" : "false");
-            continue;
+            cout << (list.search(num) ? "YES" : "NO") << endl;
         }
-        answer.emplace_back(getResult(result));
     }
 
-    for (string element : answer) {
-        cout << element << endl;
-    }
-
-    return 0;
+    list.printNumbers();
 }
